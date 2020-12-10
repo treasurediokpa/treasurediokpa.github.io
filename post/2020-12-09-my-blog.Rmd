@@ -1,0 +1,20 @@
+---
+title: My Blog
+author: ''
+date: '2020-12-09'
+slug: my-blog
+categories: []
+tags: []
+description: ''
+---
+
+```{R}
+quakes <- quakes
+```
+
+
+```{python}
+r.quakes.mag.mean()
+```
+
+![](/post/2020-12-09-my-blog_files/Screen Shot 2020-12-04 at 12.55.33 AM.png){width=20%}

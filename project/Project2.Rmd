@@ -1,0 +1,336 @@
+---
+title: 'Project 2: Modeling, Testing, and Predicting'
+author: "Treasure Diokpa (tod235)"
+date:  '2020-11-22'
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE,fig.align="center",warning=FALSE,message=FALSE,fig.width=8, fig.height=5, linewidth=60)
+options(tibble.width = 100,width = 100)
+library(tidyverse)
+```
+### Introduction
+
+The Birth Weight dataset examines various attributes of mothers and their new born infants. It contains 7 variables: the infant's birth weight in ounces, the infant's gestation period in days, the infant's parity (first born = 1, later birth = 0), the mother's age in years, mother's height in inches, mother's weight in pounds, and whether the mother smokes (1=yes, 0=no). The dataset contains 1174 observations. The data was originally acquired from the Child Health and Development Studies conducted at the Kaiser Foundation Hospital on Oakland, California. I am interested in my dataset because I am currently working on a certificate in Social Inequality, Health, and Policy. In my Health Inequality in Childhood and Adolescence class, I wrote a research paper examining high rates of infant mortality in the United states, and its association with low birth weight. Low birth weight in turn is associate with poor health habits, such as smoking. I am interested in using the Birth Weight dataset to possibly observe various relationships between attributes of mothers and their new born infants.
+
+![](https://www.takepart.com/sites/default/files/styles/large/public/black-baby-bathtub-2.jpg)
+
+I ran the dataset below:
+```{r}
+Bwtdata <- read_csv("http://people.reed.edu/~jones/141/Bwt.dat")
+Bwtdata$smoke <- as.character(Bwtdata$smoke)
+head(Bwtdata)
+```
+
+
+### MANOVA Testing
+
+#### MANOVA Assumptions
+```{r}
+
+
+library(rstatix)
+
+group <- Bwtdata$smoke 
+DVs <- Bwtdata%>% select(bwt,gestation,age, height, weight)
+
+sapply(split(DVs,group), mshapiro_test)
+
+```
+The MANOVA assumption that the sample was random and contains independent observations was likely met in research and data collection. The assumption for multivariate normality for each group was not met because the p values were less than the alpha, 0.05. This means the null hypothesis that assumptions were met is rejected. Since the assumption was not met, the Box's M test for homogeneity of co-variance was not performed. Despite the assumption being violated, the MANOVA test will be performed. 
+
+#### The MANOVA Test
+```{r}
+
+man1<-manova(cbind(bwt,gestation,age, height, weight)~smoke, data=Bwtdata) 
+summary(man1)
+
+summary.aov(man1)
+
+
+pairwise.t.test(Bwtdata$bwt,Bwtdata$smoke, p.adj="none")
+pairwise.t.test(Bwtdata$gestation,Bwtdata$smoke, p.adj="none")
+pairwise.t.test(Bwtdata$age,Bwtdata$smoke, p.adj="none")
+pairwise.t.test(Bwtdata$weight,Bwtdata$smoke, p.adj="none")
+
+
+1-0.95^10 ## Type I Error
+0.05/10 ## Bonferroni Correction
+
+```
+The MANOVA test indicates that there is a numeric variable that shows a mean difference across levels of my categorical variable, smoke. Performing uni-variate ANOVAs the responses showing a mean difference across groups are birth weight, gestation, age, and mother's weight before adjusting the p value using bonferroni correction. After, I performed the post-hoc t tests conducting pairwise comparisons to determine if the two groups, smoking and nonsmoking, differ in birth weight, gestation, age, and mother's weight. There were 10 tests performed, 1 manova, 5 anova, and 4 pairwise test so far. The calculated probability of at least one type I error is 0.4012631. Adjusting the significance level accordingly using bonferroni correction, the new alpha of 0.005. Both groups were found to differ significantly from each other only in terms of birth weight, after adjusting for multiple comparisons. 
+
+### Randomization Test (Mean Difference)
+```{r}
+set.seed(1234)
+BwtdataRand<- Bwtdata%>%select(bwt, smoke)
+head(BwtdataRand)
+
+BwtdataRand%>%group_by(smoke)%>%
+  summarize(means=mean(bwt))%>%summarize(`mean_diff`=diff(means))
+
+rand_dist<-vector()
+
+for(i in 1:5000){
+new<-data.frame(bwt=sample(BwtdataRand$bwt),smoke=BwtdataRand$smoke)
+rand_dist[i]<-mean(new[new$smoke=="0",]$bwt)-   
+              mean(new[new$smoke=="1",]$bwt)}
+
+mean(rand_dist>-9.266143	 | rand_dist < 9.266143	) 
+
+
+{hist(rand_dist,main="",ylab="", xlim=c(-10, 10)); abline(v = c(-9.266143, 9.266143),col="red")}
+
+```
+
+I performed a randomization test, and I chose the test statistic to be mean difference because I will be using a numeric and a categorical variable, infant birth weight and whether the mother smokes. The null hypothesis states that the mean infant birth weight is the same for smokers and nonsmokers. The alternative hypothesis states that the mean infant birth weight is different for smokers and nonsmokers. After performing the test, the pvalue came out to 1, which is greater than the alpha of 0.05, so I fail to reject the null hypothesis. Looking at the null distribution and the test statistic using a two tailed test, the histogram confirms the results. There is no significant association between the group the mother was in, smoking vs non smoking, and the response variable, the birth weight of the infant.
+
+###Linear Regression
+
+#### The Linear Regression 
+```{r}
+
+library(sandwich); library(lmtest)
+Bwtdata$gestation_c<-Bwtdata$gestation-mean(Bwtdata$gestation)
+
+Bwtfit1<-lm(bwt~smoke*gestation_c, data = Bwtdata)
+summary(Bwtfit1)
+
+```
+The coefficient estimate for smoke, observing the relationship between infant birth weight whether the mother smokes, tells us that smoking mothers with average gestation period have predicted infant birth weight that is 8.25771 lower than non smoking mothers with average gestation period. The coefficient estimate for gestation_c, observing the relationship between infant birth weight and infant gestation period, tells us that for every one unit increase in infant's gestation period, there is a predicted 0.36962 ounce increase in infant birth weight, on average. The coefficient estimate for weight_c:gestation_c, observing the relationship between infant birth weight the interaction between mother's smoking status and infant gestation period, tells us that the slope of gestation on infant birth weight for smoking mothers is 0.23085 greater than for non smoking mothers. The intercept is a representation of when the smoking conditions is non-smoking mother and gestation is zero, the birth weight in ounces is 122.79969 on average.
+
+#### Regression Plot
+The plot of the linear regression.
+```{r}
+
+Bwtdata%>%ggplot(aes(gestation_c, bwt, color = smoke)) + geom_point(aes(color=smoke)) + geom_smooth(method = "lm")
+```
+
+
+#### Assumptions
+Then, I checked assumptions of linearity, normality, and homoskedasticity graphically and confirmed the results using the Shapiro-Wilk and the Breusch-Pagan tests. The linearity and homosekedaticity assumption were not met. However, the normality assumption has been met. 
+```{r}
+
+resids<-Bwtfit1$residuals
+fitvals<-Bwtfit1$fitted.values 
+ggplot()+ geom_point(aes(fitvals,resids))+geom_hline(yintercept=0, color='red')
+ggplot()+geom_histogram(aes(resids),bins=10)
+
+shapiro.test(resids)
+bptest(Bwtfit1) 
+
+```
+
+
+#### Linear Regression with Robust SEs and Proportions
+```{r}
+
+coeftest(Bwtfit1, vcov=vcovHC(Bwtfit1))
+summary(Bwtfit1)$r.sq
+
+```
+Regardless of the violated assumptions, I recompute the regression results with robust standard errors. The results showed a change in my standard errors. However, there were no significant changes in my results from before the robust SEs. The significant results remained significant. The proportion of the variation in the outcome that my model explains is R^2, 0.2249173. 
+
+
+#### Bootstrapped SEs
+```{r}
+set.seed(1234)
+samp_distn<-replicate(5000, {
+  Bwtfit1boot <- sample_frac(Bwtdata, replace=T)
+  fit <- lm(bwt~gestation_c*smoke, data=Bwtfit1boot)
+  coef(fit)
+})
+
+samp_distn %>% t %>% as.data.frame %>% summarize_all(sd)
+
+samp_distn %>% t %>% as.data.frame %>% pivot_longer(1:4) %>% group_by(name) %>% summarize(lower=quantile(value,.025), upper=quantile(value,.975))
+```
+There were changes observe in SEs compared to the original and the robust SEs. The bootstrapped SEs for smoke1, gestation_c, and gestation_c:smoke1 were in between the original SEs and the robust SEs. The Robust SEs contained the largest standard error values. However, the changes were small, and the values were quite similar. Using the 95 percent confidence interval, I used my bootstrapped SEs to test significance. The pvalues of the bootstrapped SEs for the coefficient estimates compared to the original SEs and the robust SEs are still significant because their confidence intervals did not include zero.
+
+### Logistic Regression Model
+
+#### The Logistic Regression
+    
+```{r}
+
+Bwtfit2<-glm(parity~ bwt + gestation, data=Bwtdata,family=binomial(link="logit")) 
+
+coeftest(Bwtfit2)
+exp(coef(Bwtfit2))
+
+```
+The coefficient estimate for the intercept represents when birth weight and gestation are zero, the predicted odds of being first born is 0.01047882. The coefficient estimate for infant birth weight represents when infant birth weight increases by one unit the predicted odds for parity is multiplied by 0.98831808, when controlling for gestation. There is a significant, negative effect of infant birth weight on parity. The coefficient estimate for gestation represents when gestation increases by one unit the predicted odds for parity is multiplied by  1.01775140, when controlling for infant birth weight. There is a significant, positive effect of gestation on parity.
+
+
+#### Confusion Matrix   
+```{r}
+
+Bwtdata$prob<-predict(Bwtfit2,type="response")
+table(predict= as.numeric(Bwtdata$prob>0.5), truth = Bwtdata$parity) %>% addmargins()
+
+```
+
+
+
+#### Accuracy, Sensitivity (TPR), Specificity (TNR), Precision (PPV), and AUC
+```{r}
+class_diag<-function(probs,truth){
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[1]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  f1=2*(sens*ppv)/(sens+ppv)
+
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE){
+    truth<-as.numeric(truth)-1}
+  
+  #CALCULATE EXACT AUC
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+
+  data.frame(acc,sens,spec,ppv,f1,auc)
+}
+
+class_diag(Bwtdata$prob, Bwtdata$parity)
+
+```
+The accuracy for the model is 0.7350937, which represents the proportion of all the correctly classified outcomes. The sensitivity for the model is zero which represents the proportion of first born outcomes that were correctly classified.The specificity for the model is 0.9965358, which represents the proportion of later born outcomes that were correctly classified. The precision for the model is  0, which represents the proportion of cases classified as first born that actually were first born. The AUC is  0.5865451. Based on AUC cutoffs, the model performance per AUC is in the "bad" range for predicting new data because it falls within the 0.5 to 0.6 cutoffs.
+
+#### Density Plot
+The density plot for the logistic regression.
+```{r}
+Bwtdata$logit<-predict(Bwtfit2) 
+
+Bwtdata %>% mutate(outcome=factor(parity,levels=c("1","0"))) %>% ggplot(aes(logit, fill=outcome))+geom_density(alpha=.3)+
+  geom_vline(xintercept=0,lty=2)
+```
+
+#### ROC Curve and AUC
+
+```{r}
+library(plotROC)
+ROCplot<-ggplot(Bwtdata)+geom_roc(aes(d=parity,m=prob), n.cuts=0)
+ROCplot
+calc_auc(ROCplot)
+```
+The generated an ROC curve is seen above, plotting the true positive rate vs the false positive rate for all possible values of the cut off. The calculated AUC is 0.5865451. Based on AUC cutoffs, the model performance per AUC is in the "bad" range for predicting new data because it falls within the 0.5 to 0.6 cutoffs.
+
+### The Logistic Regression with All Variables
+    
+#### The Logistic Regression
+```{r}
+Bwtfit3<-glm(parity~.,data=Bwtdata, family="binomial")
+prob1 <- predict(Bwtfit3,type="response") 
+class_diag(prob1, Bwtdata$parity)
+
+table(predict=as.numeric(prob1>.5),truth=Bwtdata$parity)%>%addmargins
+
+```
+The following are in-sample classification diagnostics. The accuracy for the model is 0.7827939, which represents the proportion of all the correctly classified outcomes. The sensitivity for the model is 0.3149351 which represents the proportion of first born outcomes that were correctly classified.The specificity for the model is 0.9491917, which represents the proportion of later born outcomes that were correctly classified. The precision for the model is 0.6879433, which represents the proportion of cases classified as first born that actually were first born. The AUC of the model is 0.762136. Based on AUC cutoffs, the model performance per AUC is in the "bad" range for predicting new data because it falls within the 0.5 to 0.6 cutoffs.
+ 
+ 
+#### The Ten-Fold CV
+```{r}
+set.seed(1234)
+k=10 
+data<-Bwtdata[sample(nrow(Bwtdata)),] 
+folds<-cut(seq(1:nrow(data)),breaks=k,labels=F)
+
+diags<-NULL
+for(i in 1:k){
+  train<-data[folds!=i,] 
+  test<-data[folds==i,]
+  truth<-test$parity
+  
+  fit<-glm(parity~.,data=train, family="binomial")
+  probs<-predict(fit,newdata = test,type="response")
+  
+  diags<-rbind(diags,class_diag(probs,truth))
+}
+
+summarize_all(diags,mean)
+```
+The following are average out-of-sample classification diagnostics. The accuracy for the model is 0.7803057. The sensitivity for the model is 0.3088004. The specificity for the model is 0.9492348. The precision for the model is 0.6823474. The AUC of the model is 0.7564367. Based on AUC cutoffs, the model performance per AUC is in the "fair" range for predicting new data because it falls within the 0.7 to 0.8 cutoffs. Compared to the in-sample metics, which had an AUC of 0.762136, the out of sample AUC of 0.7564367 has decreased. Though it is a notably worse predictor, it remains in the "fair" range.
+ 
+#### LASSO
+```{r}
+
+library(glmnet)
+set.seed(1234)
+
+
+Bwtdata_preds<-model.matrix(parity~.,data=Bwtdata)[,-1] #grab predictors
+response <-as.matrix(Bwtdata$parity) #grab response
+
+cv<-cv.glmnet(Bwtdata_preds,response,family="binomial")
+lasso_fit<-glmnet(Bwtdata_preds,response,family="binomial",lambda=cv$lambda.1se)
+coef(lasso_fit)
+
+probs<- predict(lasso_fit, Bwtdata_preds, type="response")
+class_diag(probs,Bwtdata$parity)
+
+
+
+```
+
+I performed LASSO on the same model, choosing lambda to give the simplest model whose accuracy is near that of the best. The only variable that was retained was age because the coefficient estimate was the only non zero. The models AUC is 0.7444157. Based on AUC cutoffs, the model performance per AUC is in the "fair" range for predicting new data because it falls within the 0.7 to 0.8 cutoffs.
+
+#### LASSO with LASSO Selected Variables
+```{r}
+set.seed(1234)
+k=10 
+data<-Bwtdata[sample(nrow(Bwtdata)),] 
+folds<-cut(seq(1:nrow(data)),breaks=k,labels=F)
+
+diags<-NULL
+for(i in 1:k){
+  train<-data[folds!=i,] 
+  test<-data[folds==i,]
+  truth<-test$parity
+  
+  fit<-glm(parity~age,data=train, family="binomial")
+  probs<-predict(fit,newdata = test,type="response")
+  
+  diags<-rbind(diags,class_diag(probs,truth))
+}
+
+summarize_all(diags,mean)
+    
+```
+Lastly, I performed a ten-fold CV using only the variable lasso selected, age. The AUC of the model is 0.7478875. Based on AUC cutoffs, the model performance per AUC is in the "fair" range for predicting new data because it falls within the 0.7 to 0.8 cutoffs. The model's out-of-sample AUC of 0.7478875 compared to that of the original in-sample above, which has a AUC of 0.762136, has decreased. However, the AUC remains in the same cutoff range, as a "fair" predictor.
+ 
+...
+
+
+
+
+

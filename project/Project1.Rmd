@@ -1,0 +1,181 @@
+---
+title: 'SDS348: Project 1 Exploratory Data Analysis'
+author: "Treasure Diokpa (tod235)"
+date: '2020-10-18'
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+  pdf_document:
+    toc: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
+
+## Data Wrangling and Data Exploration
+![](https://empowerms.org/wp-content/uploads/2019/10/images.jpeg)
+
+### Introduction
+The datasets I have chosen inspect two unique sets of characteristics about each state of the United States. The US Arrest dataset examines the rates of various violent crimes in 1973, as well as the percentage of the population living in urban areas. It contains 4 variables: murder, assault, rape, and UrbanPop, and these variables are measured per 100,000 people. The data was acquired from the World Almanac and Book of Facts (1975) by researcher D.R. McNeil.The 'us_rent_income' dataset was acquired from the 2017 American Community Survey. The dataset captures the rent and income across the 50 states of the United States, the District of Columbia, and Puerto Rico in 2017. The dataset contains 5 variables: the FIP state identifier (GEOID), state name, the variable indicated (rent or income), the estimated value, and the margin of error (moe). 
+
+I am interested in these datasets because I am currently working on a certificate in Social Inequality, Health, and Policy. In several courses, my professors have discussed the relationship between social factors, like crime rates, and the quality of living. The potential association I would expect is that states with higher rates of crime in 1973 developed into states with an overall higher cost of living and income in 2017. Higher rates of crime would most likely be taking place in areas that were more urbanized. States with areas that were a hotbed for a criminal activity most likely developed into states with more urbanized areas, and in turn have a higher cost of living and income. The relationship between crime rates, income, and cost of living (i.e. rent) may be an indicator of the quality of living across the different states.  
+
+I ran the two datasets below:
+```{r}
+library(tidyverse)
+
+USArrests<-read_csv("http://vincentarelbundock.github.io/Rdatasets/csv/datasets/USArrests.csv")
+head(USArrests)
+
+us_rent_income <- tidyr::us_rent_income
+head(us_rent_income)
+```
+
+### Tidying the Data
+I decided to tidy my 'us_rent_income' dataset. When loading the 'US Arrest' dataset, I noticed that the column with the state name did not have a title, so I added the title called 'US_State'. For the 'us_rent_income' dataset, I used pivot_wider to make the income, rent, and the margins of error (moe) for income and rent separate variables.
+
+```{r}
+
+USArrests<-read_csv("http://vincentarelbundock.github.io/Rdatasets/csv/datasets/USArrests.csv")
+colnames(USArrests)[1] <- "US_State"
+head(USArrests)
+
+
+USRI<- us_rent_income%>%pivot_wider(names_from="variable", values_from= c("estimate","moe"))
+glimpse(USRI)
+
+```
+
+
+### Joining/Merging
+
+When joining my datasets, I chose to use the inner_join function. I chose inner_join. After all, I wanted to drop data for Puerto Rico and the District of Columbia because I wanted to focus on values for the main 50 states. 
+
+There are 0 cases in `USArrests` that do not appear in 'us_rent_income', so 0 cases were dropped. There are 4 cases in 'us_rent_income' that do not appear in 'USArrests', so there were 4 cases that were dropped. There are 50 cases in common between the datasets. When an inner_join was performed, there were 4 cases total that were dropped to create the 'USDataNew' dataset. This did not create any potential problems, as this is what I intended to happen. 
+
+```{r}
+library(tidyverse)
+USDataNew <- USArrests%>%inner_join(USRI, by= c("US_State"= "NAME"))
+glimpse(USDataNew)
+
+anti_join(USArrests, us_rent_income, by=c(US_State = "NAME"))
+anti_join(us_rent_income, USArrests, by=c(NAME = "US_State"))
+
+
+```
+    
+### Wrangling Part 1 (Exploring My Data)
+
+First, I used 'filter' to filter the USDAtaNew data set to observe the states that are below the approximate relative line of poverty in terms of income, which is approximately 30,000 dollars. I am interested in seeing if states below the relative poverty line have an association between crime rates, income, and cost of living. I learned that socioeconomic status has a fundamental effect on social operations. The United States leads the Organisation for Economic Co-operation and Development (OECD) countries in homicide rates for over half a century, attributed to violent crimes. Then, I used the 'select' function to remove the margin of error variables('moe_income' and 'moe_rent') and the FIP state identifier (GEOID) because they are not necessary for my research interest. Since my data is all numeric, I used the 'mutate' function to create a categorical variable called 'estimated_rent_cat' to label states that considered to have high estimated rent (above 800 dollars) or low estimated rent (equal to or below 800 dollars). Lastly, I used the 'arrange' function to arrange by the estimated rent for each state from high to low. Also, it was interesting to see which states estimated income fell below the relative poverty line and still had a generally high cost of living. These manipulations were saved as a new dataset called 'USDataNew2'.
+
+```{r}
+
+USDataNew2<- USDataNew %>% filter(estimate_income<=30000) %>% select(-moe_income, -moe_rent, -GEOID) %>% mutate(estimate_rent_cat = case_when(estimate_rent>800 ~ "high", estimate_rent<=800 ~ "low"))%>% arrange(-estimate_rent)
+glimpse(USDataNew2)
+```
+
+
+### Wrangling Part 2 (Creating Summary Statistics)
+
+For my summary statistics, I used the 'USDataNew2' dataset. In section 1, I used 'summarise_if' to examine the center and spread using 'mean', 'median', and 'sd' for my numeric variables. I used 'summarise_if' again to examine aspects of the range, specifically 'min' and 'max' for the numeric variables in my dataset. Since I was interested in comparing high and low cost of living states that reside below the relative poverty line, I used the 'group_by' function in section 2 to group my previous results by the 'estimated_rent_cat'. Using the 'group_by' function on my summary statistics helped the comparison. I was able to see the average rate of violent crimes was higher for the more urbanized, high cost of living, and high-income states compared to the lower cost of living states. However, I was surprised to see that the minimum state for the high cost of living category, Arizona, had lower rates of violent crimes and urbanization despite having higher income and rent compared to the minimum state for the low cost of living category, Alabama. Lastly, I created a correlation matrix using the 'cor' function on my numeric variables. I wanted to see the correlation between different violent crimes and income and the correlation between violent crimes and rent. The lowest correlation was between estimated rent and murder, and the highest correlation was between estimated rent and rape.
+
+```{r}
+### Section 1
+USDataNew2%>%summarise_if(is.numeric, mean, na.rm=T)
+USDataNew2%>%summarise_if(is.numeric, median, na.rm=T)
+USDataNew2%>%summarise_if(is.numeric, sd, na.rm=T)
+USDataNew2%>%summarise_if(is.numeric, max, na.rm=T)
+USDataNew2%>%summarise_if(is.numeric, min, na.rm=T)
+
+```
+
+```{r}
+### Section 2
+
+USDataNew2%>%group_by(estimate_rent_cat)%>%summarise_if(is.numeric, mean, na.rm=T)
+
+USDataNew2%>%group_by(estimate_rent_cat)%>%summarise_if(is.numeric, median, na.rm=T)
+
+USDataNew2%>%group_by(estimate_rent_cat)%>%summarise_if(is.numeric, sd, na.rm=T)
+
+USDataNew2%>%group_by(estimate_rent_cat) %>%summarise_all(min, na.rm=T)
+
+USDataNew2%>%group_by(estimate_rent_cat) %>%summarise_all(max, na.rm=T)
+
+USDataNew2%>%select_if(is.numeric) %>% cor()
+
+```
+
+
+### Visualizing
+
+#### Heatmap
+
+I created a correlation heatmap of my numeric variables below:
+```{r}
+USDataNew2%>%select_if(is.numeric)%>%cor%>%as.data.frame%>% rownames_to_column%>%pivot_longer(-1)%>% ggplot(aes(rowname,name,fill=value))+geom_tile()+ geom_text(aes(label=round(value,2)))+ xlab("")+ylab("")+coord_fixed()+ scale_fill_gradient2(low="red",mid="white",high="blue") +ggtitle("HeatMap of Correlations") 
+```
+
+#### GGPLOT 1: Rape Rates vs Rent Scatter Plot
+
+When looking at my heatmap, I noticed a decent correlation between 'Rape' and 'estimate_income'. I decided to make a scatterplot showing rates of rape per 100,000 people v.s the cost of rent in dollars. I grouped the points based on whether the state was an estimated low or high rent state. For states below the relative poverty line, an apparent trend is that high rent states have generally higher cost of rent and higher rates of rape than states in the low estimated rent categories. However, it is important to note that there are states that do not follow this trend.  Maybe these trends are based on state location and other state-specific factors like laws and policies against crime. 
+
+```{r}
+ggplot(USDataNew2, aes(estimate_rent, Rape)) + geom_point(aes(color=estimate_rent_cat), size=2) + ggtitle( "Crime(Rape) vs Estimate Rent") + ylab("Rape (per 100,000 people)") + xlab("Rent (dollars)") + scale_x_continuous(labels=scales::dollar)+ scale_y_continuous(breaks=seq(0,50,5)) + theme_light() + scale_color_brewer(palette="Accent")
+```
+
+#### GGPLOT 2: Murder Rates by State
+Though there were not many strong correlations, I was interested in observing rates of murder for high v.s low rent categories by state. An apparent trend is that states with a higher cost of rent have higher rates of murder. Also, I have stated before that state location may play a role. I noticed than a number of the high rent, high murder states are southern states, including Texas, Lousiana, Georgia, Florida, Tennesse, and the Carolinas. Again, this may have to deal with policies and political views about violent crimes. I learned that gun violence is the reason the US leads in homicide rates. Rates of violence in southern states may have an association with gun laws in the south. However, more research would be required to confirm these ideas.
+
+  
+```{r}
+ggplot(USDataNew2, aes(x=US_State, y = Murder, fill=estimate_rent_cat)) + geom_bar(stat="summary", fun=mean) + geom_errorbar(stat="summary", width=.5)+ ggtitle("Crime (Muder) by State") + ylab("Murder (per 100,000 people)") + scale_y_continuous() + scale_fill_brewer(palette="Accent")+theme_minimal()+ theme(axis.text.x = element_text(angle=45, hjust=1)) 
+
+```
+
+### Dimensionality Reduction and Clustering
+
+First, I processed my data by creating a new dataset called 'USdist1' containing the scaled distance of all my numeric variables. Second, I used the silhouette method to choose several clusters. The ideal number of clusters (k) was 2. Third, I decided to only my numeric variables ((Euclidean), and my cluster analysis using the PAM cluster analysis method. Fourth, to visualize my cluster analysis, I used the GGally package to make pairwise combinations of my variables and colored by the cluster. Interpreting the data, murder and assault paired with any other variable combination appeared to produce the best separation between the two clusters. Cluster 1 has a medoid of 0.27 and seems to represent mainly states in the Western and Southern states. Cluster 2 has a medoid of 0.42 and seems to represent mainly states in the Eastern and Northern states. Cluster 1 was higher on average for the variable combinations. It may be interpreted that states in the South and West are experiencing higher rates of crime rates, higher income, and higher rent costs. Again, this may pertain to Lastly, for the goodness of fit, the average silhouette width was 0.35. Interpreting this value based on the general cut-offs means that the structure is weak and is possibly artificial. I believe more research would be needed to draw more concrete conclusions.
+
+
+
+```{r}
+library(cluster)
+
+USdist1 <- USDataNew2%>%mutate_if(is.numeric, scale)%>%column_to_rownames("US_State") %>%select(Murder, Assault, Rape, estimate_income, estimate_rent) %>% na.omit %>% dist %>% as.matrix
+
+
+library(cluster) 
+
+sil_width<-vector()
+for(i in 2:10){  
+  pam_fit <- pam(USdist1, diss = TRUE, k = i)  
+  sil_width[i] <- pam_fit$silinfo$avg.width  
+}
+
+ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name="k",breaks=1:10)
+
+
+pam_USData <- pam(USdist1, k=2, diss = T)
+
+final_USData <- USDataNew2 %>% select_if(is.numeric) %>% mutate(cluster=as.factor(pam_USData$clustering))
+
+
+library(GGally)
+ggpairs(final_USData, columns =1:6, aes(color=cluster))
+plot(pam_USData, which=2)
+
+```
+
+
+...
+
+
+
+
+
