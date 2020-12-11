@@ -76,17 +76,44 @@
 <h3>The Power of R and Python</h3>
 <div id="semester-update" class="section level4">
 <h4>Semester Update</h4>
-<p>Honestly, I was nervous about taking a computational biology. The idea of making a website made me even more nervous. I would definitely consider myself a novice. However, I enjoyed Biostats, and I was interested in taking another coding course. Seeing that the course fit my degree plan, I registered. Now, it is December! Wow! Another semester complete! My journey in SDS348 was not smooth sailing. There was a lot of trial and error! However, the feeling of finally get my code to work after never ending errors was so rewarding. I have learned so much from the course, and I feel more confident in my abilities. I mean here I am using R and Python on my very own website!</p>
+<p>Honestly, I was nervous about taking computational biology. The idea of making a website at the end of the course made me even more nervous. However, I enjoyed Biostats, and I was interested in taking another coding course. Seeing that the course fit my degree plan, I registered. Now, it is December! Wow! Another semester complete! My journey in SDS348 was not smooth sailing. There was a lot of trial and error! However, the feeling of finally get my code to work after never ending errors was so rewarding. I have learned so much from the course, and I feel more confident in my abilities. I mean here I am using R and Python on my very own website!</p>
 </div>
 <div id="r-and-python-together" class="section level4">
 <h4>R and Python Together</h4>
-<p>R and Python are differnet programming languages. R will always have a special place in my heart because it was how I was introduced to the world of coding. However, Python has started to grow on me. As someone who values collaborative work, I am glad that the two programs are avble to talk to one another. There's no need to pin two great programs against one another. Communication is key. I'll be using one of my favorite datasets we worked with in class this semester: iris to demonstrate how the programs talk to one another.</p>
+<center>
+<img src="../../../../../post/2020-12-09-my-blog_files/R%20and%20Python.png" style="width:60.0%" />
+<center>
+<p>R and Python are different programming languages. R will always have a special place in my heart because it was how I was introduced to the world of coding. However, Python is starting to grow on me. As someone who values collaborative work, I am glad that the two programs are able to talk to one another. There's no need to pin two great programs against one another. Communication is key! I'll be using one of favorite datasets from this semester, iris, to demonstrate how the programs communicate.</p>
 <center>
 <img src="../../../../../post/2020-12-09-my-blog_files/iris%20.jpg" style="width:60.0%" />
 <center>
-<pre class="r"><code>library(reticulate)
+<p>Let's use reticulate package in R to pull the 'iris' dataset from R and allow python to borrow it for a bit!</p>
+<pre class="r"><code># R Chunk
+library(reticulate)
 iris &lt;- iris</code></pre>
-<p>Just a reminder as we're getting through tough times one day at a time!</p>
+<p>In python, let's access the dataset that was defined in the R environment!</p>
+<pre class="python"><code>#Python Chunk
+r.iris.head()</code></pre>
+<pre><code>##    Sepal.Length  Sepal.Width  Petal.Length  Petal.Width Species
+## 0           5.1          3.5           1.4          0.2  setosa
+## 1           4.9          3.0           1.4          0.2  setosa
+## 2           4.7          3.2           1.3          0.2  setosa
+## 3           4.6          3.1           1.5          0.2  setosa
+## 4           5.0          3.6           1.4          0.2  setosa</code></pre>
+<p>In python, let's import numpy and use its functions to compute the mean, maximum, minimum, and median values for the numeric variables in the iris data set!</p>
+<pre class="python"><code>#Python Chunk
+import numpy as np
+r.iris.describe()</code></pre>
+<pre><code>##        Sepal.Length  Sepal.Width  Petal.Length  Petal.Width
+## count    150.000000   150.000000    150.000000   150.000000
+## mean       5.843333     3.057333      3.758000     1.199333
+## std        0.828066     0.435866      1.765298     0.762238
+## min        4.300000     2.000000      1.000000     0.100000
+## 25%        5.100000     2.800000      1.600000     0.300000
+## 50%        5.800000     3.000000      4.350000     1.300000
+## 75%        6.400000     3.300000      5.100000     1.800000
+## max        7.900000     4.400000      6.900000     2.500000</code></pre>
+<p>That's all there is to it! Finally, the picture below is pretty much a summation of this wonderful semester in SDS348!</p>
 <div class="figure">
 <img src="../../../../../post/2020-12-09-my-blog_files/IMG_0605.JPG" />
 
