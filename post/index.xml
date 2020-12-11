@@ -8,23 +8,12 @@
     <language>en-US</language>
     <lastBuildDate>Wed, 09 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>My Blog</title>
+      <title>My First Blog</title>
       <link>/post/2020/12/09/my-blog/</link>
       <pubDate>Wed, 09 Dec 2020 00:00:00 +0000</pubDate>
       
       <guid>/post/2020/12/09/my-blog/</guid>
-      <description> quakes &amp;lt;- quakes r.quakes.mag.mean() ## 4.6204000000000001  </description>
-    </item>
-    
-    <item>
-      <title>Hello R Markdown</title>
-      <link>/post/2015/07/23/hello-r-markdown/</link>
-      <pubDate>Thu, 23 Jul 2015 21:13:14 -0500</pubDate>
-      
-      <guid>/post/2015/07/23/hello-r-markdown/</guid>
-      <description>R Markdown This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see http://rmarkdown.rstudio.com.
-You can embed an R code chunk like this:
-summary(cars) ## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 26.00 ## Median :15.0 Median : 36.00 ## Mean :15.4 Mean : 42.98 ## 3rd Qu.</description>
+      <description>The Power of R and Python Semester Update Honestly, I was nervous about taking a computational biology. The idea of making a website made me even more nervous. I would definitely consider myself a novice. However, I enjoyed Biostats, and I was interested in taking another coding course. Seeing that the course fit my degree plan, I registered. Now, it is December! Wow! Another semester complete! My journey in SDS348 was not smooth sailing.</description>
     </item>
     
   </channel>

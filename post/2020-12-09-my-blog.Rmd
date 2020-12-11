@@ -1,5 +1,5 @@
 ---
-title: My Blog
+title: My First Blog
 author: ''
 date: '2020-12-09'
 slug: my-blog
@@ -8,13 +8,39 @@ tags: []
 description: ''
 ---
 
+### The Power of R and Python 
+
+#### Semester Update
+
+Honestly, I was nervous about taking a computational biology. The idea of making a website made me even more nervous. I would definitely consider myself a novice. However, I enjoyed Biostats, and I was interested in taking another coding course. Seeing that the course fit my degree plan, I registered. Now, it is December! Wow! Another semester complete! My journey in SDS348 was not smooth sailing. There was a lot of trial and error! However, the feeling of finally get my code to work after never ending errors was so rewarding. I have learned so much from the course, and I feel more confident in my abilities. I mean here I am using R and Python on my very own website!
+
+
+
+
+#### R and Python Together
+R and Python are differnet programming languages. R will always have a special place in my heart because it was how I was introduced to the world of coding. However, Python has started to grow on me. As someone who values collaborative work, I am glad that the two programs are avble to talk to one another. There's no need to pin two great programs against one another. Communication is key. I'll be using one of my favorite datasets we worked with in class this semester: iris to demonstrate how the programs talk to one another.  
+
+
+
+
+
+
+
+<center>
+![](/post/2020-12-09-my-blog_files/iris .jpg){width=60%}
+<center>
+
 ```{R}
-quakes <- quakes
+library(reticulate)
+iris <- iris
 ```
 
 
 ```{python}
-r.quakes.mag.mean()
+
+
 ```
 
-![](/post/2020-12-09-my-blog_files/Screen Shot 2020-12-04 at 12.55.33 AM.png){width=20%}
+Just a reminder as we're getting through tough times one day at a time! 
+
+![](/post/2020-12-09-my-blog_files/IMG_0605.JPG)
